@@ -1,0 +1,37 @@
+import pandas as pd
+import time
+from selenium import webdriver
+from chromedriver_py import binary_path
+import itertools
+
+numeros = [546, 564, 522, 519, 558, 565, 552, 541, 553, 532, 511, 567, 398, 440, 570, 438, 545, 517, 505, 512, 461, 520,
+           468, 568, 573, 441, 507, 562, 560, 477, 531, 400, 534, 366, 530, 502, 508, 509, 538, 529, 574, 555, 536, 497,
+           576, 294, 540, 554, 446, 510, 503, 563, 557, 551, 504, 435, 498, 556, 500, 559, 35, 566, 251, 572, 571, 499,
+           528, 561, 525, 523, 524, 501]
+
+svc = webdriver.ChromeService(executable_path=binary_path)
+driver = webdriver.Chrome(service=svc)
+
+driver.get("http://www.python.org")
+assert "Python" in driver.title
+
+def obtener_data(numero):
+    web = f'https://www.senado.gob.ar/senadores/senador/{numero}'
+
+    driver.get(web)
+    
+    datos = driver.find_elements(by='xpath', value='//*[@id="content"]/div[1]/div[3]/div[2]/..')
+    datosa = [list(itertools.chain(*(dato.text.split('\n') for dato in datos)))]
+
+    df_senado = pd.DataFrame(datosa)
+
+    df = df_senado.rename(columns={0: 'nombre', 1: 'cargo', 2: 'bloque', 3: 'partido', 4: 'pinicial', 5: 'pfinal',
+                               6: 'niidea', 7: 'email', 8: 'telefono', 9: 'interno', 10: 'direccion', 11: 'ciudad',
+                               12: 'provincia'})
+
+    time.sleep(1)
+    return df
+senadores = [obtener_data(numero) for numero in numeros]
+driver.quit()
+df_senadores = pd.concat(senadores)
+df_senadores.to_csv('testeo6.csv')
